@@ -9,6 +9,8 @@ const DEFAULT_CONFIG: AppConfig = {
   noiseFloorAmplitude: null,
   listeningEnabled: true,
   triggerMode: 'voice',
+  responseText: 'Right away sir. Opening your presentation now.',
+  voiceName: null,
 };
 
 export function loadConfig(): AppConfig {

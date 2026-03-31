@@ -27,10 +27,21 @@ export function App() {
   }, []);
 
   const fireActions = useCallback(() => {
-    const enabled = configRef.current.actions.filter((a) => a.enabled);
-    for (const action of enabled) {
-      window.open(action.value, '_blank');
+    const cfg = configRef.current;
+
+    // Jarvis speaks back
+    if (cfg.responseText) {
+      speak(cfg.responseText, cfg.voiceName);
     }
+
+    // Open links after a short delay so the voice starts first
+    setTimeout(() => {
+      const enabled = cfg.actions.filter((a) => a.enabled);
+      for (const action of enabled) {
+        window.open(action.value, '_blank');
+      }
+    }, 500);
+
     setTriggered(true);
     setTimeout(() => setTriggered(false), 2000);
   }, []);
@@ -149,24 +160,8 @@ export function App() {
           <p className="text-sm text-yellow-400/80 animate-pulse">Calibrating... stay quiet</p>
         )}
 
-        {!needsCalibration && !isCalibrating && (
-          <button
-            onClick={() => updateConfig({ listeningEnabled: !config.listeningEnabled })}
-            className={`px-4 py-1.5 text-sm tracking-widest rounded-full transition-colors ${
-              config.listeningEnabled ? 'text-cyan-400/80' : 'text-neutral-500'
-            }`}
-          >
-            {config.listeningEnabled ? '● ONLINE' : '○ STANDBY'}
-          </button>
-        )}
-
-        {/* Voice transcript feedback */}
-        {isVoice && transcript && (
-          <p className="text-xs text-cyan-400/50 italic">"{transcript}"</p>
-        )}
-
         {/* Mode hint */}
-        {!needsCalibration && isListening && (
+        {!needsCalibration && isListening && !triggered && (
           <p className="text-[11px] text-neutral-600">
             {isVoice ? 'Say "Jarvis" to trigger' : 'Clap twice to trigger'}
           </p>
@@ -225,6 +220,26 @@ export function App() {
                   ? 'Say "Jarvis" to open your links. Uses browser speech recognition.'
                   : 'Clap twice to open your links. Requires noise calibration.'}
               </p>
+            </div>
+
+            <hr className="border-neutral-800" />
+
+            {/* Jarvis Response */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-neutral-300">Jarvis Response</h3>
+              <p className="text-[11px] text-neutral-500">What Jarvis says when triggered. Leave empty to stay silent.</p>
+              <textarea
+                value={config.responseText}
+                onChange={(e) => updateConfig({ responseText: e.target.value })}
+                rows={2}
+                className="w-full bg-neutral-800 text-sm rounded px-3 py-2 placeholder:text-neutral-500 resize-none border border-neutral-700 focus:border-cyan-600 focus:outline-none"
+                placeholder="Right away sir. Opening your presentation now."
+              />
+              <VoicePicker
+                responseText={config.responseText}
+                voiceName={config.voiceName}
+                onVoiceChange={(v) => updateConfig({ voiceName: v })}
+              />
             </div>
 
             <hr className="border-neutral-800" />
@@ -321,6 +336,57 @@ function ActionList({ actions, onUpdate }: { actions: Action[]; onUpdate: (a: Ac
       ) : (
         <button onClick={() => setAdding(true)} className="w-full py-1.5 text-sm text-neutral-500 border border-dashed border-neutral-700 rounded hover:border-neutral-500 transition-colors">+ Add</button>
       )}
+    </div>
+  );
+}
+
+// --- Speak helper ---
+function speak(text: string, voiceName: string | null) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 1;
+  utterance.pitch = 0.9;
+  const voices = speechSynthesis.getVoices();
+  if (voiceName) {
+    const match = voices.find((v) => v.name === voiceName);
+    if (match) utterance.voice = match;
+  } else {
+    const fallback = voices.find((v) => v.lang === 'en-GB') || voices.find((v) => v.lang.startsWith('en'));
+    if (fallback) utterance.voice = fallback;
+  }
+  speechSynthesis.speak(utterance);
+}
+
+// --- Voice Picker ---
+function VoicePicker({ responseText, voiceName, onVoiceChange }: { responseText: string; voiceName: string | null; onVoiceChange: (v: string | null) => void }) {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const load = () => {
+      const v = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+      setVoices(v);
+    };
+    load();
+    speechSynthesis.onvoiceschanged = load;
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <select
+        value={voiceName || ''}
+        onChange={(e) => onVoiceChange(e.target.value || null)}
+        className="w-full bg-neutral-800 text-sm rounded px-2 py-2 border border-neutral-700"
+      >
+        <option value="">Auto (British English)</option>
+        {voices.map((v) => (
+          <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+        ))}
+      </select>
+      <button
+        onClick={() => speak(responseText || 'Hello, I am Jarvis.', voiceName)}
+        className="w-full py-2 text-sm bg-neutral-800 hover:bg-neutral-700 rounded transition-colors"
+      >
+        Preview Voice
+      </button>
     </div>
   );
 }

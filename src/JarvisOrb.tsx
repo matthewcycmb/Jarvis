@@ -11,7 +11,7 @@ export function JarvisOrb({ amplitude, triggered, isListening, isCalibrating }: 
   const cyanDim = '#0e7490';
 
   return (
-    <div className="relative w-72 h-72 flex items-center justify-center">
+    <div className="relative w-[28rem] h-[28rem] flex items-center justify-center">
       {/* Outer glow */}
       <div
         className="absolute inset-0 rounded-full transition-all duration-200"
@@ -88,15 +88,15 @@ export function JarvisOrb({ amplitude, triggered, isListening, isCalibrating }: 
         {/* J.A.R.V.I.S text */}
         <text
           x="150"
-          y="148"
+          y="146"
           textAnchor="middle"
           dominantBaseline="central"
           fill={cyan}
-          fontSize="18"
-          fontWeight="bold"
+          fontSize="16"
+          fontWeight="700"
           letterSpacing="4"
-          opacity={0.6 + glow * 0.4}
-          style={{ fontFamily: 'system-ui, sans-serif' }}
+          opacity={0.7 + glow * 0.3}
+          style={{ fontFamily: "'Orbitron', sans-serif" }}
         >
           J.A.R.V.I.S
         </text>

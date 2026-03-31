@@ -22,6 +22,8 @@ export interface AppConfig {
   noiseFloorAmplitude: number | null;
   listeningEnabled: boolean;
   triggerMode: TriggerMode;
+  responseText: string;
+  voiceName: string | null;
 }
 
 export const DEFAULT_DETECTION: DetectionConfig = {
